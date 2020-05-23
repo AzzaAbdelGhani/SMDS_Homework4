@@ -175,6 +175,43 @@ xyplot(resid(model0) ~ x7, data=automobiles, group=x11, main = "model0_residuals
 ```
 Here observation 5 is the only car which is manual and has 3-speed transmisson so we can say that our previous foresight was right, 5 is a strong candiate as an outlier.
 
+### Exercise 11
+**The following code is designed to explore effects that can result from the omission of explanatoryvariables:**
+```{r DAAG_ex11, echo=TRUE}
+set.seed(11)
+x1 <- runif(10)                    # predictor which will be missing
+x2 <- rbinom(10, 1, 1-x1)          # observed predictor which depends
+                                   # on missing predictor
+y <- 5*x1 + x2 + rnorm(10,sd=.1)   # simulated model; coef
+                                   # of x2 is positive
+y.lm <- lm(y ~ factor(x2))         # model fitted to observed data
+coef(y.lm)     
+```
+```{r , echo=TRUE}
+y.lm2 <- lm(y ~ x1 + factor(x2))   # correct model
+coef(y.lm2)
+```
+**What  happens  if x_2 is  generated  according  to x_2 <- rbinom(10, 1, x1)? x_2 <- rbinom(10, 1, .5)?**
+*solution : *
+```{r , echo=TRUE}
+x2 <- rbinom(10, 1, x1) 
+y.lm3 <- lm(y ~ x1 + factor(x2)) 
+coef(y.lm3)
+```
+
+```{r , echo=TRUE}
+x2 <- rbinom(10, 1, .5) 
+y.lm4 <- lm(y ~ x1 + factor(x2))   
+coef(y.lm4)
+```
+In both cases we have almost the same changes in the coefficients with respect to the correct model. The intercept has increased, and the other coefficients have decreased, which means that the effect of the variables $x_1$ and $x_2$ is reduced. We can also see the p-values of these two new models:
+```{r, echo=TRUE}
+summary(y.lm3)
+```
+```{r, echo=TRUE}
+summary(y.lm4)
+```
+For the $x_2$ variable we have a high p-value, which means that the value of the coefficient $\beta_{x_2}$ is not significantly far from 0.
 
 ## Chapter 8 Exercises {.tabset}
 
@@ -262,4 +299,42 @@ moths$habitat <- relevel(moths$habitat, ref = "Lowerside")
 summary(P.glm <- glm(P ~ habitat + log(meters), family =  quasipoisson, data = moths)) 
 
 ```
+<<<<<<< HEAD
+The highest numbers are in habitats `SWsoak` and `Disturbed`. Number of moths increases with the transect lenght, by a factor of $e^{0.55} =1.73 $ for each one meter increase in transect lenght.
+
+###  Exercise 6
+**(a)  Simulate 100 Poisson responses using the model logλ=2−4x. Fit a Poisson regression model to these data, and compare the estimated coefficients with the true coefficients. How well does the estimated model predictfuture observations?**
+*solution : *
+```{r DAAG_ex6, echo=TRUE}
+library("lattice")
+library("DAAG")
+x <- seq(0, 1, 0.01)
+sim <-poissonsim(x, a=2, b=-4, seed = 21)
+model1<- glm(y~x, family = poisson, data = sim)
+coef<- summary(model1)$coeff
+coef
+sim_model1 <- poissonsim(x, a=coef[1] , b=coef[2], seed = 21)
+mean(sim$y==sim_model1$y)
+```
+Predictons and real values coincide the 83% of the total cases.
+
+**Simulate 100 Poisson responses using the model logλ=2−bx where b is normally distributed with mean 4 and standard deviation 5. [Use the argumentslope.sd=5in thepoissonsim()function.] How do the results using the poisson and quasipoisson families differ?**
+*solution : *
+```{r DAGG_ex6, echo=TRUE}
+x <- seq(0, 1, 0.01)
+b1 <- rnorm(1, 4, 5)
+sim2 <-poissonsim(x, a=2, b=-b1, slope.sd = 5, seed = 21)
+model2<- glm(y~x, family = poisson, data = sim2)
+summary(model2)
+
+```
+
+```{r, echo = TRUE}
+model3 <- glm(y~x, family = quasipoisson, data = sim2)
+summary(model3)
+```
+
+We can see that the estimated coefficients are equal, the difference between the two models is the dispersion parameter: in the Poisson one is set to 1, in the quasipoisson is set to 15. We can see that this mkae the standard errors change in the two models, and so the confidence intervals and the p-values.
+=======
 The highest numbers are in habitats `SWsoak` and `Disturbed`. Number of moths increases with the transect lenght, by a factor of $e^{0.55} =1.73$ for each one meter increase in transect lenght.
+>>>>>>> 1fadfd0b7764c316a44fd0cc9a76518fe29acd87
