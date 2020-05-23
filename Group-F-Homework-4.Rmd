@@ -149,7 +149,7 @@ xyplot(y ~ x1 + x2 + x3, data = automobiles, groups = x11, main = "y vs x", pch 
                                                                                           text=list(lab=c("automatic")),points=list(col="purple")))
 
 ```
-This plot shows that apparent nonlinearity can be explained by the two types of transmission.
+Here $x1$ is displacement (cubic in),$x2$ is horsepower and $x3$ is torque. This plot shows that apparent nonlinearity can be explained by the two types of transmission so linear model is reasonable for these data.
 
 **c) Fit the model relating `y` to `x1` and `x11` which gives two lines having possibly different slopes and intercepts. Check the diagnostics. Are there any influential observations? Are there any influential outliers?**
 
@@ -161,7 +161,7 @@ par(mfrow = c(1,4))
 plot(model0)
 
 ```
-Residual plot show no systematic behaviour. Observation 5 ,15, 22 influential and 5 is possible outlier according to Cook's distance.
+Residual plot shows no systematic behaviour but there are some deflection from normal distribution. Observation 5 ,15, 22 influential and 5 is possible outlier according to Cook's distance.
 
 
 **d) Plot the residuals against the variable `x7` (number of transmission speeds), again using `x11` as a group variable. Is there anything striking about this plot?**
@@ -237,7 +237,7 @@ summary(A.glm <-  glm(A ~ habitat + log(meters), family = quasipoisson, data = m
 summary(A.glm <-  glm(A ~ habitat + log(meters), family = poisson, data = moths))
 
 ```
-We can see that dispersion parameter for quassipoisson is 2.7. One of the explanation to this might be there is a clustering effect with an average cluster size 2.7. Therefore standard errors and p-values from a model that assumed Poisson errors would be misleading. Using quassipoisson has increased the standard errors by a factor of $\sqrt{2.7}=1.64$. So using poisson will reduce the SE by this factor if the poisson family specified.
+We can see that dispersion parameter for quassipoisson is 2.7. One of the explanation to this might be there is a clustering effect with an average cluster size 2.7. Therefore standard errors and p-values from a model that assumed Poisson errors would be misleading because our assumption which is variance is equal to mean doesn't seem fair in this case.. Using quassipoisson has increased the standard errors by a factor of $\sqrt{2.7}=1.64$. So using poisson will reduce the SE by this factor if the poisson family specified.
 
 **b) Analyze the `P` moths, in the same way as the A moths were analyzed. Comment on the effect of transect length.**
 
@@ -262,4 +262,4 @@ moths$habitat <- relevel(moths$habitat, ref = "Lowerside")
 summary(P.glm <- glm(P ~ habitat + log(meters), family =  quasipoisson, data = moths)) 
 
 ```
-The highest numbers are in habitats `SWsoak` and `Disturbed`. Number of moths increases with the transect lenght, by a factor of $e^{0.55} =1.73 $ for each one meter increase in transect lenght.
+The highest numbers are in habitats `SWsoak` and `Disturbed`. Number of moths increases with the transect lenght, by a factor of $e^{0.55} =1.73$ for each one meter increase in transect lenght.
