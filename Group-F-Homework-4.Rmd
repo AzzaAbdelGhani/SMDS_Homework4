@@ -1,5 +1,5 @@
 ---
-title: "Homework 3"
+title: "Homework 4"
 author: "Group B: Abdalghani, Demirbilek, Plasencia Palacios, Spagnolo"
 date: "Spring 2020"
 output:
@@ -34,6 +34,66 @@ local({
 # {.tabset}
 
 ## Chapter 6 Exercises {.tabset}
+
+
+### Exercise 6
+
+**The following investigates the consequences of not using a logarithmic transformation for the
+$nihills$ data analysis. The second differs from the first in having a $dist × climb$ interaction
+term, additional to linear terms in $dist$ and $climb$**
+
+**(a) Fit the two models:
+
+$nihills.lm <- lm(time  dist+climb, data=nihills)$
+
+$nihills2.lm <- lm(time  dist+climb+dist:climb, data=nihills)$
+
+$anova(nihills.lm, nihills2.lm)$**
+
+
+**(b) Using the F-test result, make a tentative choice of model, and proceed to examine diagnostic plots. Are there any problematic observations? What happens if these points are
+removed? Refit both of the above models, and check the diagnostics again.**
+
+*solution :* Let's fit the models.
+```{r echo=TRUE}
+library(DAAG)
+library(lattice)
+nihills.lm <- lm(time~dist+climb, data=nihills)
+par(mfrow=c(2,2), oma =c(0,0,0,0))
+plot(nihills.lm)
+summary(nihills.lm)
+```
+As we saw in Lab4, we can see from the plots that the variabiliy is not constant and that we have an influential point (Seven Sevens).
+
+```{r echo=TRUE}
+nihills2.lm <- lm(time~ dist+climb+dist:climb, data=nihills)
+par(mfrow=c(2,2), oma =c(0,0,0,0))
+plot(nihills2.lm)
+summary(nihills2.lm)
+```
+In this other model  we still have the problems we had with the previuos one.
+
+Since we have nested models, we can use $anova$ to compare them:
+```{r echo=TRUE}
+anova(nihills.lm, nihills2.lm)
+```
+The p-value, based on the $F$ test, suggests to accept the second model in place of the first one.
+
+Now let's refit the models after having removed "problematics points":
+```{r echo=TRUE}
+#removing Seven Sevens
+newnihills<-nihills[-c(19 ),]
+nihills.lm <- lm(time~dist+climb, data=newnihills)
+par(mfrow=c(2,2), oma =c(0,0,0,0))
+plot(nihills.lm)
+```
+
+```{r echo=TRUE}
+nihills2.lm <- lm(time~ dist+climb+dist:climb, data=newnihills)
+par(mfrow=c(2,2), oma =c(0,0,0,0))
+plot(nihills2.lm)
+```
+The new situation still presents some problems in both cases, as there may seem to be a pattern in the residuals. This may be because, as we saw, the assumption of normality does not perfectly fit the data.
 
 
 ### Exercise 8
@@ -175,7 +235,10 @@ xyplot(resid(model0) ~ x7, data=automobiles, group=x11, main = "model0_residuals
 ```
 Here observation 5 is the only car which is manual and has 3-speed transmisson so we can say that our previous foresight was right, 5 is a strong candiate as an outlier.
 
+
+
 ### Exercise 11
+
 **The following code is designed to explore effects that can result from the omission of explanatoryvariables:**
 ```{r DAAG_ex11, echo=TRUE}
 set.seed(11)
@@ -213,7 +276,39 @@ summary(y.lm4)
 ```
 For the $x_2$ variable we have a high p-value, which means that the value of the coefficient $\beta_{x_2}$ is not significantly far from 0.
 
+
 ## Chapter 8 Exercises {.tabset}
+
+
+### Exercise 1
+
+**The following table shows numbers of occasions when inhibition (i.e., no flow of current across
+a membrane) occurred within 120 s, for different concentrations of the protein peptide-C (data
+are used with the permission of Claudia Haarmann, who obtained these data in the course of her
+PhD research). The outcome $yes$ implies that inhibition has occurred.
+conc 0.1 0.5  1 10 20 30 50 70 80 100 150
+no    7   1  10  9  2  9 13  1  1   4   3
+yes   0   0   3  4  0  6  7  0  0   1   7
+Use logistic regression to model the probability of inhibition as a function of protein concentration.**
+
+*solution:*
+
+We use a generalized linear model with Binomial distribution. Since the logistic regression corresponds to the link function for binomial regression, we don't need to specify it in the code.
+
+
+```{r echo=TRUE}
+conc <- c(0.1, 0.5, 1, 10, 20, 30, 50, 70, 80, 100, 150)
+no <- c(7, 1, 10, 9, 2, 9, 13, 1, 1, 4, 3)
+yes <- c(0, 0, 3, 4, 0, 6, 7, 0, 0, 1 ,7)
+n <- no + yes #total
+prob <- yes/n #proportion, binomal probability 
+plot(conc, yes/no)
+model <- glm(prob ~ conc, family=binomial, weights=n)
+summary(model)
+par(mfrow=c(2,2), oma =c(0,0,0,0))
+plot(model)
+```
+The fit seems quite good.
 
 
 ### Exercise 2
@@ -274,7 +369,14 @@ summary(A.glm <-  glm(A ~ habitat + log(meters), family = quasipoisson, data = m
 summary(A.glm <-  glm(A ~ habitat + log(meters), family = poisson, data = moths))
 
 ```
-We can see that dispersion parameter for quassipoisson is 2.7. One of the explanation to this might be there is a clustering effect with an average cluster size 2.7. Therefore standard errors and p-values from a model that assumed Poisson errors would be misleading because our assumption which is variance is equal to mean doesn't seem fair in this case.. Using quassipoisson has increased the standard errors by a factor of $\sqrt{2.7}=1.64$. So using poisson will reduce the SE by this factor if the poisson family specified.
+
+We can see that dispersion parameter for quassipoisson is 2.7. One of the explanation to this might
+be there is a clustering effect with an average cluster size 2.7. Therefore standard errors and 
+p-values from a model that assumed Poisson errors would be misleading because our assumption which 
+is variance is equal to mean doesn't seem fair in this case.. Using quassipoisson has increased the
+standard errors by a factor of $\sqrt{2.7}=1.64$. So using poisson will reduce the SE by this 
+factor if the poisson family specified.
+
 
 **b) Analyze the `P` moths, in the same way as the A moths were analyzed. Comment on the effect of transect length.**
 
@@ -299,10 +401,12 @@ moths$habitat <- relevel(moths$habitat, ref = "Lowerside")
 summary(P.glm <- glm(P ~ habitat + log(meters), family =  quasipoisson, data = moths)) 
 
 ```
-<<<<<<< HEAD
-The highest numbers are in habitats `SWsoak` and `Disturbed`. Number of moths increases with the transect lenght, by a factor of $e^{0.55} =1.73 $ for each one meter increase in transect lenght.
+The highest numbers are in habitats `SWsoak` and `Disturbed`. Number of moths increases with the transect lenght, by a factor of $e^{0.55} =1.73$ for each one meter increase in transect lenght.
+
+
 
 ###  Exercise 6
+
 **(a)  Simulate 100 Poisson responses using the model logλ=2−4x. Fit a Poisson regression model to these data, and compare the estimated coefficients with the true coefficients. How well does the estimated model predictfuture observations?**
 *solution : *
 ```{r DAAG_ex6, echo=TRUE}
@@ -334,7 +438,10 @@ model3 <- glm(y~x, family = quasipoisson, data = sim2)
 summary(model3)
 ```
 
-We can see that the estimated coefficients are equal, the difference between the two models is the dispersion parameter: in the Poisson one is set to 1, in the quasipoisson is set to 15. We can see that this mkae the standard errors change in the two models, and so the confidence intervals and the p-values.
-=======
-The highest numbers are in habitats `SWsoak` and `Disturbed`. Number of moths increases with the transect lenght, by a factor of $e^{0.55} =1.73$ for each one meter increase in transect lenght.
->>>>>>> 1fadfd0b7764c316a44fd0cc9a76518fe29acd87
+We can see that the estimated coefficients are equal, the difference between the two models is the 
+dispersion parameter: in the Poisson one is set to 1, in the quasipoisson is set to 15. We can see 
+that this mkae the standard errors change in the two models, and so the confidence intervals and 
+the p-values.
+
+The highest numbers are in habitats `SWsoak` and `Disturbed`. Number of moths increases with the 
+transect lenght, by a factor of $e^{0.55} =1.73$ for each one meter increase in transect lenght.
