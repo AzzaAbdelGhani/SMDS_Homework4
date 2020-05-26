@@ -122,7 +122,8 @@ brainwt_ridge <- lm.ridge(brainwt~., data=litters, lambda=0.118)
 brainwt_ridge
 
 #fit the linear model
-brainwt_lm <- summary(lm(brainwt~., data=litters))$coefficients[,1]
+lm_model <- lm(brainwt~., data=litters)
+brainwt_lm <- summary(lm_model)$coefficients[,1]
 brainwt_lm
 ```
 
@@ -141,28 +142,34 @@ where : $lsize$ = 10, and $bodywt$ = 7.
 
 ```{r echo=TRUE}
 library(boot)
-library(lmridge)
+
 # Ridge regression estimate :
 ridge.estimate <- coef(brainwt_ridge)[1] + coef(brainwt_ridge)[2]*10 + coef(brainwt_ridge)[3]*7
 print(paste("Ridge regerssion estimate : " , ridge.estimate))
  
 # Ordinary regression estimate :
+lm.estimate <- brainwt_lm[1] + brainwt_lm[2]*10 + brainwt_lm[3]*7
+print(paste("Ordinary regerssion estimate : " , lm.estimate))
+
+#Prediction for new data set :
 new_data <- data.frame(lsize=10, bodywt=7)
-predict.lm(lm(brainwt~., data=litters), new_data, interval = "confidence")
+predict.lm(lm_model, new_data, interval = "confidence")
 
 
 # Sampling bootstrap of linear model
 lm_func <- function(x, indices) {
   d <- x[indices,] 
   lm_fit <- lm(formula=brainwt~., data=d)
-  return(predict(lm_fit, new_data))
+  preds <- predict(lm_fit, new_data)
+  return(preds)
 } 
 
 # Sampling bootstrap of ridge regression
 ridge_func <- function(x, indices) {
   d <- x[indices,]
-  ridge_fit <- lmridge(formula=brainwt~., data=d, K = 0.118)
-  return(coef(ridge_fit)[1] + coef(ridge_fit)[2]*10 + coef(ridge_fit)[3]*7)
+  ridge_fit <- lm.ridge(formula=brainwt~., data=d, K = 0.118)
+  preds <- coef(ridge_fit)[1] + coef(ridge_fit)[2]*10 + coef(ridge_fit)[3]*7
+  return(preds)
 }
 
 
