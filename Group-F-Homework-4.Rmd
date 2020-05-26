@@ -317,40 +317,83 @@ The fit seems quite good.
 
 *solution :*
 
+We carry out the logistic regression on the data set (head.injury). For that we use the glm function, and we have to specify the name of the family = binomial, since the distribution of the dependent variable is binomial:
+
 ```{r echo=TRUE}
 library(DAAG)
 
 str(head.injury)
+#head(head.injury, 10)
 
 injury.fit = glm(formula = clinically.important.brain.injury ~ . , data = head.injury, family = "binomial")
 summary(injury.fit) 
-#Observe that log(.025/(1-.025)) = -3.66, an increase of 0.84 above the intercept (= -4.50).
 
-# Split the data into train and test sets
-n_obs <- nrow(head.injury)
-k <- n_obs*0.8
-train <- head.injury[1:k,]
-test <- head.injury[(k+1):n_obs,] 
+```
 
+The logistic regression formula for this model given that risk threshold is :  
+
+$$ \log \frac{0.025}{(1 - 0.025)} = -3.6635 = \beta_0 + \beta_1 * \text{age.65} + \dots + \beta_{10} * \text{vomiting}$$
+
+
+We can observe that there is an increase of 0.8337 above the intercept (= -4.4972), and since all the variables are binary 0-1, so the combined coefficients for the variables should be at least of 0.8337 in order to make the decision of that patient to be sent for CT.
+
+
+First, we split the data randomly into training dataset (80% of the data) and test dataset (20%) by using the `createDataPartition` function :
+
+```{r echo=TRUE}
+library(caret)
+set.seed(1234)
+
+# Split the data into train and test sets randomly :
+trainIndex <- createDataPartition(head.injury$clinically.important.brain.injury, p = .80,
+                                  list = FALSE,
+                                  times = 1)
+
+train <- head.injury[ trainIndex,]
+test  <- head.injury[-trainIndex,]
+```
+
+After that, we fit the logistic regression model on the training dataset : 
+
+```{r echo=TRUE}
 #Fit the model 
 injury.fit = glm(formula = clinically.important.brain.injury ~ . , data = train, family = "binomial")
-#summary(injury.fit)
+summary(injury.fit)
+```
 
+In addition, we apply the function predict to the `injury.fit` and the `test` set to give us a probability for every observation, for a default binomial model the default predictions are of log-odds (probabilities on logit scale) and type = "response" gives the predicted probabilities. So, The type="response" option tells R to output probabilities of the form P(Y = 1|X), as opposed to other information such as the logit. 
+
+```{r echo=TRUE}
 #get the probabilities of the predictions
-probs <- predict(injury.fit, test)
+probs <- predict(injury.fit, test, type = "response")
+```
 
+Now we can use the risk threshold of 0.025 (2.5%) for our decision, we can transform those probabilities into successes and failures (1’s and 0’s): 
+
+```{r echo=TRUE}
 # predict based on the risk threshold 
 preds <- ifelse(probs > 0.025, 1, 0)
+```
 
-
+Finally, we print the confusion matrix and calculate the accuracy of our model: 
+```{r echo=TRUE}
 confusion_mat <- table(actual=test$clinically.important.brain.injury, predicted=preds)
 confusion_mat
-#print the accuracy 
-print(paste('Accuracy', 1-(mean(preds != test$clinically.important.brain.injury))))
+
+#accuracy is the avergae of correct predictions : 
+accurate <- 1*(preds == test$clinically.important.brain.injury)
+print(paste('Accuracy', sum(accurate)/nrow(test)))
 
 ```
 
 
+We can conclude, that the accuracy is not too good due to the fact that there is some variables which they are not significant. Also, we can make a decision rule for use of CT given the risk of threshold. As we saw that the combined coefficients with variables have to be at least 0.8337. Thus, a patient should be sent to the CT if these conditions are satisfied :   
+
+(1) `GCS.decrease` with any other individual variable except `amnesia.before`, `loss.of.consciousness` and `open.skull.fracture`. 
+(2) `GCS.decrease` with any two of `amnesia.before`, `loss.of.consciousness` and `open.skull.fracture`.
+(3) Any of the individual variables `age.65`, `basal.skull.fracture`, `GCS.13`, `GCS.15.2hours`, `high.risk` and `vomiting`, irrespective of the levels of other variables.
+
+Otherwise, the patient doesn't need to be sent to CT. 
 
 ### Exercise 3
 

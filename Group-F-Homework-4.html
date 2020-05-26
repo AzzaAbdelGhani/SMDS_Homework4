@@ -530,7 +530,7 @@ boot.ci(lm.boot, type=&quot;perc&quot;)</code></pre>
 ## 
 ## Intervals : 
 ## Level     Percentile     
-## 95%   ( 0.4052,  0.4235 )  
+## 95%   ( 0.4060,  0.4229 )  
 ## Calculations and Intervals on Original Scale</code></pre>
 <pre class="r"><code>boot.ci(ridge.boot, type=&quot;perc&quot;)</code></pre>
 <pre><code>## BOOTSTRAP CONFIDENCE INTERVAL CALCULATIONS
@@ -541,7 +541,7 @@ boot.ci(lm.boot, type=&quot;perc&quot;)</code></pre>
 ## 
 ## Intervals : 
 ## Level     Percentile     
-## 95%   ( 0.4012,  0.4190 )  
+## 95%   ( 0.4011,  0.4199 )  
 ## Calculations and Intervals on Original Scale</code></pre>
 </div>
 <div id="exercise-10" class="section level3">
@@ -699,6 +699,7 @@ plot(model)</code></pre>
 <h3>Exercise 2</h3>
 <p><strong>In the data set (an artificial one of 3121 patients, that is similar to a subset of the data analyzed in Stiell et al., 2001) <span class="math inline">\(minor.head.injury\)</span>, obtain a logistic regression model relating <span class="math inline">\(clinically.important.brain.injury\)</span> to other variables. Patients whose risk is sufficiently high will be sent for CT (computed tomography). Using a risk threshold of 0.025 (2.5%), turn the result into a decision rule for use of CT.</strong></p>
 <p><em>solution :</em></p>
+<p>We carry out the logistic regression on the data set (head.injury). For that we use the glm function, and we have to specify the name of the family = binomial, since the distribution of the dependent variable is binomial:</p>
 <pre class="r"><code>library(DAAG)
 
 str(head.injury)</code></pre>
@@ -714,7 +715,9 @@ str(head.injury)</code></pre>
 ##  $ open.skull.fracture              : num  0 0 0 0 0 0 0 0 0 0 ...
 ##  $ vomiting                         : num  0 0 0 0 0 0 0 0 0 0 ...
 ##  $ clinically.important.brain.injury: num  0 0 0 0 0 0 0 0 0 0 ...</code></pre>
-<pre class="r"><code>injury.fit = glm(formula = clinically.important.brain.injury ~ . , data = head.injury, family = &quot;binomial&quot;)
+<pre class="r"><code>#head(head.injury, 10)
+
+injury.fit = glm(formula = clinically.important.brain.injury ~ . , data = head.injury, family = &quot;binomial&quot;)
 summary(injury.fit) </code></pre>
 <pre><code>## 
 ## Call:
@@ -748,34 +751,80 @@ summary(injury.fit) </code></pre>
 ## AIC: 1223.3
 ## 
 ## Number of Fisher Scoring iterations: 6</code></pre>
-<pre class="r"><code>#Observe that log(.025/(1-.025)) = -3.66, an increase of 0.84 above the intercept (= -4.50).
+<p>The logistic regression formula for this model given that risk threshold is :</p>
+<p><span class="math display">\[ \log \frac{0.025}{(1 - 0.025)} = -3.6635 = \beta_0 + \beta_1 * \text{age.65} + \dots + \beta_{10} * \text{vomiting}\]</span></p>
+<p>We can observe that there is an increase of 0.8337 above the intercept (= -4.4972), and since all the variables are binary 0-1, so the combined coefficients for the variables should be at least of 0.8337 in order to make the decision of that patient to be sent for CT.</p>
+<p>First, we split the data randomly into training dataset (80% of the data) and test dataset (20%) by using the <code>createDataPartition</code> function :</p>
+<pre class="r"><code>library(caret)
+set.seed(1234)
 
-# Split the data into train and test sets
-n_obs &lt;- nrow(head.injury)
-k &lt;- n_obs*0.8
-train &lt;- head.injury[1:k,]
-test &lt;- head.injury[(k+1):n_obs,] 
+# Split the data into train and test sets randomly :
+trainIndex &lt;- createDataPartition(head.injury$clinically.important.brain.injury, p = .80,
+                                  list = FALSE,
+                                  times = 1)
 
-#Fit the model 
+train &lt;- head.injury[ trainIndex,]
+test  &lt;- head.injury[-trainIndex,]</code></pre>
+<p>After that, we fit the logistic regression model on the training dataset :</p>
+<pre class="r"><code>#Fit the model 
 injury.fit = glm(formula = clinically.important.brain.injury ~ . , data = train, family = &quot;binomial&quot;)
-#summary(injury.fit)
-
-#get the probabilities of the predictions
-probs &lt;- predict(injury.fit, test)
-
-# predict based on the risk threshold 
-preds &lt;- ifelse(probs &gt; 0.025, 1, 0)
-
-
-confusion_mat &lt;- table(actual=test$clinically.important.brain.injury, predicted=preds)
+summary(injury.fit)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = clinically.important.brain.injury ~ ., family = &quot;binomial&quot;, 
+##     data = train)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -2.3393  -0.3129  -0.2035  -0.1487   3.0032  
+## 
+## Coefficients:
+##                       Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)            -4.4986     0.1823 -24.677  &lt; 2e-16 ***
+## age.65                  1.4322     0.2060   6.952 3.60e-12 ***
+## amnesia.before          0.6316     0.1965   3.214 0.001307 ** 
+## basal.skull.fracture    2.0581     0.2352   8.749  &lt; 2e-16 ***
+## GCS.decrease           -0.2353     0.4203  -0.560 0.575562    
+## GCS.13                  1.2462     0.3234   3.854 0.000116 ***
+## GCS.15.2hours           1.9539     0.1901  10.277  &lt; 2e-16 ***
+## high.risk               0.9898     0.1822   5.433 5.54e-08 ***
+## loss.of.consciousness   0.8749     0.2304   3.797 0.000147 ***
+## open.skull.fracture     0.6973     0.3419   2.039 0.041402 *  
+## vomiting                1.3672     0.2221   6.154 7.54e-10 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 1368.80  on 2496  degrees of freedom
+## Residual deviance:  937.36  on 2486  degrees of freedom
+## AIC: 959.36
+## 
+## Number of Fisher Scoring iterations: 6</code></pre>
+<p>In addition, we apply the function predict to the <code>injury.fit</code> and the <code>test</code> set to give us a probability for every observation, for a default binomial model the default predictions are of log-odds (probabilities on logit scale) and type = “response” gives the predicted probabilities. So, The type=“response” option tells R to output probabilities of the form P(Y = 1|X), as opposed to other information such as the logit.</p>
+<pre class="r"><code>#get the probabilities of the predictions
+probs &lt;- predict(injury.fit, test, type = &quot;response&quot;)</code></pre>
+<p>Now we can use the risk threshold of 0.025 (2.5%) for our decision, we can transform those probabilities into successes and failures (1’s and 0’s):</p>
+<pre class="r"><code># predict based on the risk threshold 
+preds &lt;- ifelse(probs &gt; 0.025, 1, 0)</code></pre>
+<p>Finally, we print the confusion matrix and calculate the accuracy of our model:</p>
+<pre class="r"><code>confusion_mat &lt;- table(actual=test$clinically.important.brain.injury, predicted=preds)
 confusion_mat</code></pre>
 <pre><code>##       predicted
 ## actual   0   1
-##      0 561  10
-##      1  44   9</code></pre>
-<pre class="r"><code>#print the accuracy 
-print(paste(&#39;Accuracy&#39;, 1-(mean(preds != test$clinically.important.brain.injury))))</code></pre>
-<pre><code>## [1] &quot;Accuracy 0.913461538461538&quot;</code></pre>
+##      0 278 291
+##      1   3  52</code></pre>
+<pre class="r"><code>#accuracy is the avergae of correct predictions : 
+accurate &lt;- 1*(preds == test$clinically.important.brain.injury)
+print(paste(&#39;Accuracy&#39;, sum(accurate)/nrow(test)))</code></pre>
+<pre><code>## [1] &quot;Accuracy 0.528846153846154&quot;</code></pre>
+<p>We can conclude, that the accuracy is not too good due to the fact that there is some variables which they are not significant. Also, we can make a decision rule for use of CT given the risk of threshold. As we saw that the combined coefficients with variables have to be at least 0.8337. Thus, a patient should be sent to the CT if these conditions are satisfied :</p>
+<ol style="list-style-type: decimal">
+<li><code>GCS.decrease</code> with any other individual variable except <code>amnesia.before</code>, <code>loss.of.consciousness</code> and <code>open.skull.fracture</code>.</li>
+<li><code>GCS.decrease</code> with any two of <code>amnesia.before</code>, <code>loss.of.consciousness</code> and <code>open.skull.fracture</code>.</li>
+<li>Any of the individual variables <code>age.65</code>, <code>basal.skull.fracture</code>, <code>GCS.13</code>, <code>GCS.15.2hours</code>, <code>high.risk</code> and <code>vomiting</code>, irrespective of the levels of other variables.</li>
+</ol>
+<p>Otherwise, the patient doesn’t need to be sent to CT.</p>
 </div>
 <div id="exercise-3" class="section level3">
 <h3>Exercise 3</h3>
