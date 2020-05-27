@@ -256,7 +256,7 @@ x2 <- rbinom(10, 1, 1-x1)          # observed predictor which depends
 y <- 5*x1 + x2 + rnorm(10,sd=.1)   # simulated model; coef
                                    # of x2 is positive
 y.lm <- lm(y ~ factor(x2))         # model fitted to observed data
-coef(y.lm)     
+coef(y.lm)
 ```
 ```{r , echo=TRUE}
 y.lm2 <- lm(y ~ x1 + factor(x2))   # correct model
@@ -290,7 +290,7 @@ coef(y.lm2)
 ```{r, echo=TRUE}
 plot(x2,y) 
 ```
-In this case the relation between $x_1$ and $x_2$ changes, in fact the "prob" parameter used in "rbinom" is $x_1$ and no more $1-x_1$. The $\beta_{x_2}$ now is positive, which means that the variable $x_2$ has a positive effect on the response variable. Also here the coefficient of $x_2$ tries to explain the effect of $x_1$. Finally we can say that for high valuer of $x_1$ we have also high values on $x_2$ and on $y$. 
+In this case the relation between $x_1$ and $x_2$ changes, in fact the "prob" parameter used in "rbinom" is $x_1$ and no more $1-x_1$. The $\beta_{x_2}$ now is positive, which means that the variable $x_2$ has a positive effect on the response variable. Also here the coefficient of $x_2$ tries to explain the effect of $x_1$. Finally we can say that for higher values of $x_1$ we have also higher values on $x_2$ and on $y$. 
 
 ```{r, echo=TRUE}
 x2 <- rbinom(10, 1, .5)
@@ -343,7 +343,7 @@ yes   0   0   3  4  0  6  7  0  0   1   7
 
 *solution:*
 
-We use a generalized linear model with Binomial distribution. Since the logistic regression corresponds to the link function for binomial regression, we don't need to specify it in the code.
+We will use a generalized linear model with Binomial distribution. Since the logistic regression corresponds to the link function for binomial regression, we don't need to specify it in the code.
 
 
 ```{r echo=TRUE}
@@ -351,14 +351,24 @@ conc <- c(0.1, 0.5, 1, 10, 20, 30, 50, 70, 80, 100, 150)
 no <- c(7, 1, 10, 9, 2, 9, 13, 1, 1, 4, 3)
 yes <- c(0, 0, 3, 4, 0, 6, 7, 0, 0, 1 ,7)
 n <- no + yes #total
-prob <- yes/n #proportion, binomal probability 
-plot(conc, yes/no)
-model <- glm(prob ~ conc, family=binomial, weights=n)
+p <- yes/n #proportion, binomal probability 
+#as we may see, a linear regression model would not be appropriate 
+plot(conc, p) 
+model <- glm(p ~ conc, family=binomial, weights=n)
 summary(model)
-par(mfrow=c(2,2), oma =c(0,0,0,0))
-plot(model)
 ```
-The fit seems quite good.
+Both the intercept and the concentration are statistically significant.
+Since the deviance decreases, we can say that our predictor actually explains some variability.
+
+```{r echo=TRUE}
+coef=model$coefficients
+curve(exp(coef[1]+coef[2]*x)/(1+exp(coef[1]+coef[2])*x), xlim=c(-1,170), ylim=c(-0.05, 1.05))
+points(conc, p)
+#probability of inhibition with concentration=1
+invlogit <- function (x) {1/(1+exp(-x))}
+invlogit(model$coefficients%*%c(1,1))
+```
+The coefficient for *conc* can be interpreted as a difference of 0.012 in the logit probability of inhibition when the concentration is increased by one.
 
 
 ### Exercise 2
